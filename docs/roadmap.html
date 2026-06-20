@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgenticPromptHub — Product Roadmap</title>
+<style>
+  :root {
+    --bg: #0d0f14;
+    --surface: #161b27;
+    --surface2: #1e2535;
+    --border: #2a3347;
+    --accent: #6366f1;
+    --accent2: #8b5cf6;
+    --accent3: #06b6d4;
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --orange: #f97316;
+    --red: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --muted2: #94a3b8;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 40px 24px;
+  }
+
+  /* ── Header ── */
+  .header {
+    text-align: center;
+    margin-bottom: 60px;
+  }
+  .logo-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin-bottom: 12px;
+  }
+  .logo-icon {
+    width: 52px; height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+  }
+  h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #e2e8f0, var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .tagline {
+    color: var(--muted2);
+    font-size: 1.05rem;
+    max-width: 580px;
+    margin: 0 auto 28px;
+    line-height: 1.6;
+  }
+
+  /* ── North Star ── */
+  .north-star {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.1));
+    border: 1px solid rgba(99,102,241,0.3);
+    border-radius: 12px;
+    padding: 10px 20px;
+    font-size: 0.9rem;
+    color: var(--muted2);
+  }
+  .north-star strong { color: var(--text); }
+
+  /* ── Tech Stack ── */
+  .stack-bar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 60px;
+  }
+  .stack-pill {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 99px;
+    padding: 5px 14px;
+    font-size: 0.8rem;
+    color: var(--muted2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .stack-pill span { font-size: 1rem; }
+
+  /* ── Section titles ── */
+  .section-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 20px;
+  }
+
+  /* ── Phase timeline ── */
+  .phases {
+    max-width: 960px;
+    margin: 0 auto 70px;
+    position: relative;
+  }
+  .timeline-line {
+    position: absolute;
+    left: 28px;
+    top: 0; bottom: 0;
+    width: 2px;
+    background: linear-gradient(to bottom, var(--accent), var(--accent2), var(--accent3), var(--green), var(--yellow), var(--orange));
+    opacity: 0.35;
+  }
+  .phase-card {
+    position: relative;
+    margin-left: 70px;
+    margin-bottom: 28px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 24px;
+    transition: border-color 0.2s;
+  }
+  .phase-card:hover { border-color: var(--accent); }
+
+  .phase-dot {
+    position: absolute;
+    left: -42px; top: 22px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+
+  .phase-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .phase-num {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .phase-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .badge {
+    font-size: 0.7rem;
+    font-weight: 600;
+    border-radius: 99px;
+    padding: 2px 10px;
+  }
+  .badge-now   { background: rgba(16,185,129,0.15); color: var(--green); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-next  { background: rgba(99,102,241,0.15);  color: var(--accent);  border: 1px solid rgba(99,102,241,0.3); }
+  .badge-later { background: rgba(100,116,139,0.1);  color: var(--muted2);  border: 1px solid var(--border); }
+  .badge-ent   { background: rgba(245,158,11,0.12);  color: var(--yellow);  border: 1px solid rgba(245,158,11,0.3); }
+
+  .phase-desc {
+    color: var(--muted2);
+    font-size: 0.88rem;
+    line-height: 1.55;
+    margin-bottom: 14px;
+  }
+
+  .feature-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .feat {
+    font-size: 0.77rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted2);
+  }
+
+  .competitor-row {
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .comp-label { font-size: 0.72rem; color: var(--muted); }
+  .comp-pill {
+    font-size: 0.72rem;
+    background: rgba(99,102,241,0.08);
+    border: 1px solid rgba(99,102,241,0.2);
+    color: var(--accent);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+
+  /* ── Phase 1 deep-dive ── */
+  .p1-details {
+    max-width: 960px;
+    margin: 0 auto 70px;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 640px) { .two-col { grid-template-columns: 1fr; } }
+
+  .detail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+  }
+  .detail-card h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .detail-card ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .detail-card li {
+    font-size: 0.82rem;
+    color: var(--muted2);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  .detail-card li::before {
+    content: '›';
+    color: var(--accent);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .deferred-block {
+    margin-top: 16px;
+    background: rgba(100,116,139,0.06);
+    border: 1px dashed var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    grid-column: 1 / -1;
+  }
+  .deferred-block h3 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  .deferred-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .deferred-pill {
+    font-size: 0.77rem;
+    color: var(--muted);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 4px 10px;
+    text-decoration: line-through;
+    text-decoration-color: var(--muted);
+    opacity: 0.6;
+  }
+
+  /* ── Design decisions ── */
+  .decisions {
+    max-width: 960px;
+    margin: 0 auto 70px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  @media (max-width: 700px) { .decisions { grid-template-columns: 1fr; } }
+
+  .decision-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px;
+  }
+  .decision-card .d-icon { font-size: 1.4rem; margin-bottom: 10px; }
+  .decision-card h3 { font-size: 0.88rem; font-weight: 700; margin-bottom: 6px; }
+  .decision-card p { font-size: 0.8rem; color: var(--muted2); line-height: 1.5; }
+  .decision-card .d-choice {
+    margin-top: 10px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    display: inline-block;
+    background: rgba(99,102,241,0.12);
+    color: var(--accent);
+    border: 1px solid rgba(99,102,241,0.25);
+  }
+
+  /* ── Runtime flow ── */
+  .flow {
+    max-width: 960px;
+    margin: 0 auto 70px;
+  }
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    overflow-x: auto;
+    padding-bottom: 8px;
+  }
+  .flow-node {
+    flex-shrink: 0;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 16px;
+    text-align: center;
+    min-width: 110px;
+  }
+  .flow-node .fn-icon { font-size: 1.2rem; margin-bottom: 4px; }
+  .flow-node .fn-label { font-size: 0.72rem; color: var(--muted2); font-weight: 600; }
+  .flow-arrow {
+    flex-shrink: 0;
+    color: var(--muted);
+    font-size: 1.2rem;
+    padding: 0 8px;
+  }
+
+  /* ── Footer note ── */
+  .footer-note {
+    max-width: 960px;
+    margin: 0 auto;
+    text-align: center;
+    color: var(--muted);
+    font-size: 0.78rem;
+    padding-top: 30px;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="header">
+  <div class="logo-row">
+    <div class="logo-icon">⚡</div>
+    <h1>AgenticPromptHub</h1>
+  </div>
+  <p class="tagline">
+    A full-stack SaaS platform for managing, versioning, and serving prompts at runtime — built in phases from prompt management to full agentic orchestration.
+  </p>
+  <div class="north-star">
+    <span>🌟</span>
+    <span>North Star: <strong>The operating system for production AI prompts and agents</strong></span>
+  </div>
+</div>
+
+<!-- ══ TECH STACK ══ -->
+<div class="stack-bar">
+  <div class="stack-pill"><span>⚛️</span> React + TypeScript</div>
+  <div class="stack-pill"><span>🟩</span> Express / Node</div>
+  <div class="stack-pill"><span>🐘</span> PostgreSQL + Row-Level Security</div>
+  <div class="stack-pill"><span>🔐</span> Team-scoped Tenancy</div>
+  <div class="stack-pill"><span>📦</span> Open-core compatible</div>
+</div>
+
+<!-- ══ PHASES ══ -->
+<div class="phases">
+  <p class="section-title" style="margin-left:70px">Phased Roadmap</p>
+  <div class="timeline-line"></div>
+
+  <!-- Phase 1 -->
+  <div class="phase-card">
+    <div class="phase-dot" style="background: var(--green)"></div>
+    <div class="phase-header">
+      <span class="phase-num">Phase 1</span>
+      <span class="phase-name">Prompt Management</span>
+      <span class="badge badge-now">Building Now</span>
+    </div>
+    <p class="phase-desc">
+      The foundation. Teams create, version, and serve prompts at runtime. Applications fetch prompts via SDK rather than hardcoding them — the core stickiness driver.
+    </p>
+    <div class="feature-grid">
+      <span class="feat">Auth &amp; Teams</span>
+      <span class="feat">RBAC</span>
+      <span class="feat">Prompt CRUD</span>
+      <span class="feat">Immutable Versions</span>
+      <span class="feat">Environment Aliases</span>
+      <span class="feat">Text Diff Compare</span>
+      <span class="feat">Runtime SDK</span>
+      <span class="feat">Audit Trail</span>
+    </div>
+    <div class="competitor-row">
+      <span class="comp-label">Competes with:</span>
+      <span class="comp-pill">PromptLayer</span>
+      <span class="comp-pill">Agenta</span>
+      <span class="comp-pill">LangSmith (partial)</span>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <div class="phase-card">
+    <div class="phase-dot" style="background: var(--accent)"></div>
+    <div class="phase-header">
+      <span class="phase-num">Phase 2</span>
+      <span class="phase-name">AI Gateway / Proxy</span>
+      <span class="badge badge-next">Next</span>
+    </div>
+    <p class="phase-desc">
+      Unified provider abstraction so customers route through AgenticPromptHub. BYOK model, cost tracking, rate limiting, and provider fallback without changing application code.
+    </p>
+    <div class="feature-grid">
+      <span class="feat">Multi-provider Routing</span>
+      <span class="feat">BYOK (Bring Your Own Key)</span>
+      <span class="feat">Cost Tracking</span>
+      <span class="feat">Rate Limiting</span>
+      <span class="feat">Provider Fallback</span>
+      <span class="feat">Request Logging</span>
+    </div>
+    <div class="competitor-row">
+      <span class="comp-label">Competes with:</span>
+      <span class="comp-pill">LiteLLM</span>
+      <span class="comp-pill">PortKey</span>
+      <span class="comp-pill">Helicone</span>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <div class="phase-card">
+    <div class="phase-dot" style="background: var(--accent3)"></div>
+    <div class="phase-header">
+      <span class="phase-num">Phase 3</span>
+      <span class="phase-name">Observability &amp; Tracing</span>
+      <span class="badge badge-later">Later</span>
+    </div>
+    <p class="phase-desc">
+      Full conversation traces linked to prompt versions. Understand which version produced which output, latency breakdown, and prompt lineage across sessions.
+    </p>
+    <div class="feature-grid">
+      <span class="feat">Conversation Traces</span>
+      <span class="feat">Prompt Lineage</span>
+      <span class="feat">Latency Breakdown</span>
+      <span class="feat">Token Usage Drill-down</span>
+      <span class="feat">Session Replay</span>
+    </div>
+    <div class="competitor-row">
+      <span class="comp-label">Competes with:</span>
+      <span class="comp-pill">Langfuse</span>
+      <span class="comp-pill">Arize Phoenix</span>
+      <span class="comp-pill">Weights &amp; Biases</span>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <div class="phase-card">
+    <div class="phase-dot" style="background: var(--yellow)"></div>
+    <div class="phase-header">
+      <span class="phase-num">Phase 4</span>
+      <span class="phase-name">Evaluation</span>
+      <span class="badge badge-later">Later</span>
+    </div>
+    <p class="phase-desc">
+      Structured prompt evaluation with datasets and LLM-as-judge scoring. Run A/B experiments on prompt versions before promoting to production.
+    </p>
+    <div class="feature-grid">
+      <span class="feat">Evaluation Datasets</span>
+      <span class="feat">LLM-as-Judge</span>
+      <span class="feat">A/B Version Testing</span>
+      <span class="feat">Regression Detection</span>
+      <span class="feat">Score History</span>
+    </div>
+    <div class="competitor-row">
+      <span class="comp-label">Competes with:</span>
+      <span class="comp-pill">Braintrust</span>
+      <span class="comp-pill">Promptfoo</span>
+      <span class="comp-pill">Agenta Eval</span>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <div class="phase-card">
+    <div class="phase-dot" style="background: var(--orange)"></div>
+    <div class="phase-header">
+      <span class="phase-num">Phase 5</span>
+      <span class="phase-name">Agentic Platform</span>
+      <span class="badge badge-later">Later</span>
+    </div>
+    <p class="phase-desc">
+      Everything prior converges into a workflow orchestration layer. Define multi-agent pipelines, wire prompt versions into nodes, observe end-to-end execution, and evaluate agent performance.
+    </p>
+    <div class="feature-grid">
+      <span class="feat">Workflow Builder</span>
+      <span class="feat">Multi-agent Pipelines</span>
+      <span class="feat">Tool/MCP Integration</span>
+      <span class="feat">Agent Observability</span>
+      <span class="feat">Human-in-the-loop</span>
+      <span class="feat">Agent Evaluation</span>
+    </div>
+    <div class="competitor-row">
+      <span class="comp-label">Competes with:</span>
+      <span class="comp-pill">LangGraph Cloud</span>
+      <span class="comp-pill">Vertex AI Agents</span>
+      <span class="comp-pill">CrewAI Enterprise</span>
+    </div>
+  </div>
+
+  <!-- Enterprise (cross-cutting) -->
+  <div class="phase-card" style="border-color: rgba(245,158,11,0.25)">
+    <div class="phase-dot" style="background: var(--yellow)"></div>
+    <div class="phase-header">
+      <span class="phase-num">Cross-cutting</span>
+      <span class="phase-name">Enterprise &amp; Org Layer</span>
+      <span class="badge badge-ent">Parallel Track</span>
+    </div>
+    <p class="phase-desc">
+      Org hierarchy above teams, SSO, compliance exports, advanced RBAC, and self-hosted deployment. Layered on as Phase 1+ customer demand arises.
+    </p>
+    <div class="feature-grid">
+      <span class="feat">Org Hierarchy</span>
+      <span class="feat">SSO / SAML</span>
+      <span class="feat">Self-hosting</span>
+      <span class="feat">Compliance Exports</span>
+      <span class="feat">Advanced RBAC</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══ PHASE 1 DEEP DIVE ══ -->
+<div class="p1-details">
+  <p class="section-title">Phase 1 — In Scope vs. Deferred</p>
+  <div class="two-col">
+
+    <div class="detail-card">
+      <h3>🔐 Auth &amp; Teams</h3>
+      <ul>
+        <li>Email / password auth (JWT sessions)</li>
+        <li>Team creation and invite-by-email flow</li>
+        <li>Roles: Owner, Admin, Member, Viewer</li>
+        <li><code>team_id</code> on every row (RLS-ready for org layer later)</li>
+      </ul>
+    </div>
+
+    <div class="detail-card">
+      <h3>📝 Prompt CRUD</h3>
+      <ul>
+        <li>Create / edit prompts with name, description, tags</li>
+        <li>Variable interpolation with <code>{{variable}}</code> syntax</li>
+        <li>Slug-based identifiers for SDK fetching</li>
+        <li>Soft-delete with audit trail entries</li>
+      </ul>
+    </div>
+
+    <div class="detail-card">
+      <h3>🔖 Versioning</h3>
+      <ul>
+        <li>Immutable versions — published versions never mutate</li>
+        <li>Movable environment aliases: <code>production</code>, <code>staging</code>, <code>latest</code></li>
+        <li>Version history with author + timestamp</li>
+        <li>Promote / rollback alias without touching version record</li>
+      </ul>
+    </div>
+
+    <div class="detail-card">
+      <h3>🔍 Compare &amp; SDK</h3>
+      <ul>
+        <li>Side-by-side text diff between any two versions</li>
+        <li>REST API for runtime prompt fetch by slug + env alias</li>
+        <li>JavaScript / TypeScript SDK (Phase 1 target)</li>
+        <li>Export / sync as secondary distribution path</li>
+      </ul>
+    </div>
+
+    <div class="deferred-block">
+      <h3>Explicitly deferred to later phases</h3>
+      <div class="deferred-pills">
+        <span class="deferred-pill">AI Proxy / BYOK</span>
+        <span class="deferred-pill">Playground / Live Test</span>
+        <span class="deferred-pill">Conversation Traces</span>
+        <span class="deferred-pill">Evaluation / Datasets</span>
+        <span class="deferred-pill">LLM-as-Judge</span>
+        <span class="deferred-pill">Org Hierarchy</span>
+        <span class="deferred-pill">SSO / SAML</span>
+        <span class="deferred-pill">Multi-agent Workflows</span>
+        <span class="deferred-pill">Output Comparison</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ DESIGN DECISIONS ══ -->
+<div style="max-width:960px;margin:0 auto 32px">
+  <p class="section-title">Foundational Design Decisions</p>
+</div>
+<div class="decisions">
+
+  <div class="decision-card">
+    <div class="d-icon">🏗️</div>
+    <h3>Tenancy Model</h3>
+    <p>Team-scoped MVP with <code>team_id</code> on every resource and Postgres Row-Level Security from day one. Org hierarchy added later without restructuring.</p>
+    <span class="d-choice">Team-first, org-ready</span>
+  </div>
+
+  <div class="decision-card">
+    <div class="d-icon">🔖</div>
+    <h3>Versioning Strategy</h3>
+    <p>Immutable published versions with movable environment alias pointers. Apps pin to an alias, not a version number — rollback = move the alias.</p>
+    <span class="d-choice">Aliases over pinned IDs</span>
+  </div>
+
+  <div class="decision-card">
+    <div class="d-icon">🔍</div>
+    <h3>Prompt Comparison</h3>
+    <p>Phase 1 scope is text diff only (what changed). Output comparison and full eval belong to later phases to keep Phase 1 self-contained.</p>
+    <span class="d-choice">Text diff only in P1</span>
+  </div>
+
+  <div class="decision-card">
+    <div class="d-icon">📡</div>
+    <h3>Distribution Model</h3>
+    <p>Runtime SDK fetch is the primary path (creates stickiness). Export/sync is secondary. Apps never hardcode prompt text.</p>
+    <span class="d-choice">SDK-first runtime fetch</span>
+  </div>
+
+  <div class="decision-card">
+    <div class="d-icon">📦</div>
+    <h3>Open Source Path</h3>
+    <p>Architecture keeps the self-hostable path open even though the OSS/commercial decision is deferred. No SaaS-only coupling in Phase 1.</p>
+    <span class="d-choice">Open-core compatible</span>
+  </div>
+
+  <div class="decision-card">
+    <div class="d-icon">🐘</div>
+    <h3>Backend Language</h3>
+    <p>Express/TypeScript for Phases 1–2. Python integration considered for Phases 4–5 where the AI/eval ecosystem strongly prefers Python.</p>
+    <span class="d-choice">TS now, Python later</span>
+  </div>
+
+</div>
+
+<!-- ══ RUNTIME FLOW ══ -->
+<div class="flow">
+  <p class="section-title">How Runtime Prompt Fetching Works (Phase 1)</p>
+  <div class="flow-row">
+    <div class="flow-node">
+      <div class="fn-icon">📱</div>
+      <div class="fn-label">Customer App</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-icon">📦</div>
+      <div class="fn-label">SDK call<br><code style="font-size:0.62rem">getPrompt(slug, env)</code></div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node" style="border-color:rgba(99,102,241,0.4)">
+      <div class="fn-icon">⚡</div>
+      <div class="fn-label">AgenticPromptHub<br>REST API</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-icon">🏷️</div>
+      <div class="fn-label">Resolve alias<br>→ version</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-icon">🐘</div>
+      <div class="fn-label">PostgreSQL<br>prompt body</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-node">
+      <div class="fn-icon">✅</div>
+      <div class="fn-label">Interpolated<br>prompt text</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ FOOTER ══ -->
+<div class="footer-note">
+  AgenticPromptHub &nbsp;·&nbsp; Roadmap as of June 2026 &nbsp;·&nbsp; Phase 1 in active development
+</div>
+
+</body>
+</html>
