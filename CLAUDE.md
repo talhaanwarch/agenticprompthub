@@ -32,10 +32,284 @@ Each phase (Prompt Management → AI Gateway → Tracing → Tool Observability 
 Catalog → Evaluation → Agentic Platform) gets its **own** brainstorm → spec →
 plan cycle before any implementation begins.
 
+## Decision logging — non-negotiable rule
+
+Every technical decision made during any session (interview-me, brainstorming, spec writing, or ad-hoc conversation) **must be appended to the relevant FAQ file immediately** — not at the end of the session, not when asked, but as soon as the decision is confirmed.
+
+- Phase 1 decisions → `docs/superpowers/specs/phase-1-faq.md`
+- Future phases get their own FAQ file: `phase-2-faq.md`, etc.
+
+Each entry must capture the **question** and the **why** (rationale), not just the what. A decision without a rationale is not a decision — it is a guess waiting to be re-litigated.
+
+If a decision is reversed or refined, **update the existing FAQ entry** rather than appending a conflicting one.
+
 ## Foundational decisions (see the roadmap for rationale)
 
 - **Tenancy:** everything is `team`-scoped; shared schema + Postgres Row-Level
   Security. Organization is an additive parent to be introduced later.
-- **Database:** PostgreSQL (JSONB for flexible payloads).
-- **Frontend:** React. **Backend:** Express / TypeScript (a Python sidecar is
-  expected for AI-heavy phases: gateway, eval, agents).
+- **Database:** PostgreSQL (JSONB for flexible payloads). **ORM: Drizzle** with the `postgres` npm driver.
+- **Frontend:** React. **Backend:** Express / TypeScript. **No Python in Phase 1** — nunjucks handles Jinja2 templating in Node.js. Python sidecars are anticipated for Phase 2 (LiteLLM gateway), Phase 5 (eval/scoring libraries), and Phase 6 (agent orchestration); they live in `services/` when they arrive and are called over HTTP from the core API.
+
+---
+
+## Code best practices — non-negotiable rules
+
+### Language & style
+
+- **TypeScript everywhere.** All source files are `.ts` or `.tsx`. No plain `.js` files in `src/`.
+- Strict mode on: `"strict": true` in `tsconfig.json`. No `any` unless the type is genuinely unknowable and a comment explains why.
+- Use `interface` for object shapes exposed in public APIs; `type` for unions, intersections, and internal aliases.
+
+### Repository layout (monorepo)
+
+This is a **pnpm workspaces monorepo** with Turborepo for task orchestration. The top-level structure maps directly to the 6-phase platform roadmap.
+
+```
+agenticprompthub/                        ← monorepo root
+│
+├── apps/
+│   ├── api/                             ← Main Express/TypeScript API (phases 1–4+)
+│   ├── web/                             ← React frontend (phase 1 F1–F5+)
+│   └── worker/                          ← Async job runner (phase 5+: eval runs)
+│
+├── packages/
+│   ├── sdk/                             ← @agentichub/sdk — TypeScript, Node only
+│   └── types/                           ← Shared TS types (api ↔ sdk ↔ web)
+│
+└── services/                            ← Extracted when monolith needs splitting
+    ├── gateway/                         ← Phase 2: Python/LiteLLM sidecar
+    ├── telemetry/                       ← Phase 3: high-volume trace ingest
+    └── eval/                            ← Phase 5: Python eval + scoring sidecar
+```
+
+`services/` folders start empty — the corresponding logic begins as a module inside `apps/api` and moves here only when it needs independent deployment or a different language runtime.
+
+---
+
+### `apps/api` domain structure
+
+Group code by **domain, then by kind**. Domains that are sub-resources of another domain are nested inside it (e.g. `versions/` and `aliases/` live under `prompts/`).
+
+```
+apps/api/
+├── src/
+│   │
+│   ├── auth/                    ← Phase 1
+│   ├── teams/                   ← Phase 1
+│   │   ├── members/
+│   │   └── invites/
+│   ├── prompts/                 ← Phase 1 — core versioning model (reused by tools/)
+│   │   ├── versions/
+│   │   ├── aliases/
+│   │   └── diff/
+│   ├── api-keys/                ← Phase 1
+│   ├── audit/                   ← Phase 1
+│   │
+│   ├── gateway/                 ← Phase 2: AI proxy, virtual keys, budgets
+│   │   ├── keys/
+│   │   ├── budgets/
+│   │   ├── providers/
+│   │   └── cache/
+│   │
+│   ├── traces/                  ← Phase 3: ingestion + query
+│   │   ├── spans/
+│   │   └── sessions/
+│   │
+│   ├── tools/                   ← Phase 4: Tool Catalog (same model as prompts/)
+│   │   ├── versions/
+│   │   └── aliases/
+│   │
+│   ├── datasets/                ← Phase 5
+│   ├── experiments/             ← Phase 5
+│   ├── evaluations/             ← Phase 5
+│   │
+│   ├── agents/                  ← Phase 6
+│   │   ├── workflows/
+│   │   ├── memory/
+│   │   └── knowledge/
+│   │
+│   ├── organizations/           ← Enterprise: org layer above teams
+│   │
+│   └── shared/
+│       ├── db/
+│       │   ├── client.ts        ← single Drizzle db instance
+│       │   ├── schema.ts        ← all table definitions (single source of truth)
+│       │   └── migrations/      ← drizzle-kit generated SQL
+│       ├── middleware/
+│       │   ├── error.middleware.ts
+│       │   └── validate.middleware.ts
+│       └── errors/
+│           ├── app-error.ts
+│           └── http-errors.ts
+│
+├── app.ts                       ← Express factory — mounts all routers, no listen()
+├── server.ts                    ← Entry point — imports app.ts, calls listen()
+└── drizzle.config.ts
+```
+
+**Domain file pattern** — every domain folder follows the same internal structure:
+
+```
+<domain>/
+  <domain>.router.ts       ← Express router wiring only
+  <domain>.controller.ts   ← HTTP in/out: validate → call service → respond
+  <domain>.service.ts      ← Business logic / use-cases
+  <domain>.repository.ts   ← All DB queries for this domain (imports db, nothing else does)
+  <domain>.types.ts        ← Zod schemas, interfaces, DTOs
+  <domain>.test.ts         ← Integration tests (real DB, no mocks)
+```
+
+Sub-domain folders (e.g. `prompts/versions/`) follow the same pattern independently.
+
+- **One concern per file.** A service file must not contain route handlers. A repository file must not contain business logic.
+- **One class or one cohesive set of related functions per file.** Do not bundle unrelated utilities into a single `helpers.ts` catch-all.
+- All files in a folder must be re-exported via an `index.ts` barrel file.
+
+### Classes vs. functions
+
+- Prefer **classes** for stateful constructs: services, repositories, clients (DB, HTTP, cache).
+- Prefer **plain functions** for stateless transformations and pure utilities.
+- Do not use classes merely to namespace functions — use a module (file) for that.
+
+### JSDoc on every exported symbol — non-negotiable
+
+Every exported function, class, method, and type **must** have a JSDoc block with:
+
+```ts
+/**
+ * One-line summary of what this does.
+ *
+ * @param paramName - What it is and any constraints (e.g. "must be > 0").
+ * @returns What is returned and in which shape.
+ * @throws {ErrorClassName} When and why this throws.
+ */
+```
+
+- Private/internal helpers that are not exported may omit JSDoc, but must still have a one-line comment if the intent is non-obvious.
+- Do not write JSDoc that merely restates the function name ("Gets the user" on `getUser`). Describe the *why* or the *edge cases*.
+
+### Naming conventions
+
+| Construct | Convention | Example |
+|-----------|-----------|---------|
+| Files | `kebab-case` | `prompt-service.ts` |
+| Classes | `PascalCase` | `PromptService` |
+| Interfaces / Types | `PascalCase` (no `I` prefix) | `CreatePromptDto` |
+| Functions / methods | `camelCase` | `createPrompt()` |
+| Constants | `UPPER_SNAKE_CASE` for module-level; `camelCase` for local | `MAX_VERSION`, `defaultLimit` |
+| Enums | `PascalCase` with `PascalCase` members | `PromptStatus.Active` |
+
+### Error handling
+
+- Define domain-specific error classes in `src/shared/errors/` (e.g. `NotFoundError`, `ForbiddenError`).
+- Services throw typed errors; controllers catch them and map to HTTP status codes.
+- Never swallow errors silently. Always either re-throw or log and re-throw.
+
+### Drizzle ORM
+
+- The single Drizzle `db` instance is created once in `src/shared/db/client.ts` and imported everywhere — never create a new connection inside a service or repository.
+- All table definitions live in `src/shared/db/schema.ts`. This is the single source of truth for column names, types, and constraints. Do not duplicate column definitions anywhere else.
+- All database access goes through **repository classes** (`<domain>.repository.ts`). Services must never import `db` directly — only repositories do.
+- Migrations are managed by **drizzle-kit**: `drizzle-kit generate` to produce SQL, `drizzle-kit migrate` to apply. Never edit generated migration files by hand; create a new migration instead.
+- Use Drizzle's inferred types (`InferSelectModel<typeof prompts>`, etc.) as the source of truth for entity shapes in `*.types.ts` files.
+- For complex queries or operations not expressible in the Drizzle query builder, use `db.execute(sql`...`)` with the tagged `sql` template literal — do not stringify SQL manually.
+- For Row-Level Security (RLS, deferred to post-Phase 1), the pattern will be: set `app.current_team_id` via `db.execute(sql`SET LOCAL app.current_team_id = ${teamId}`)` inside a transaction before the query. Plan the connection pool accordingly when RLS arrives.
+
+### Express (API framework)
+
+- Mount all routers in `app.ts`; never call `app.use()` inside a domain router file.
+- Route handlers (controllers) do exactly three things: validate the request, call a service method, send the response. No business logic in controllers.
+- Use a single global error-handling middleware registered last in `app.ts` to convert typed errors to HTTP responses.
+- Validate request bodies and query params with **Zod** schemas defined in `<domain>.types.ts`. Parse at the controller boundary; pass typed objects into services.
+- All routes are prefixed with `/api/v1` at the router level.
+
+### Testing
+
+**Philosophy: real data flows only. No dummy tests, no mocks, no stubs.**
+
+Every test exercises the full stack — HTTP request → controller → service → repository → real Postgres → response. If the database is not involved, the test is not valuable.
+
+**Stack:**
+- `supertest` — makes real HTTP requests against the Express app
+- Real Postgres test database (`TEST_DATABASE_URL` env var, separate from dev DB)
+- Tables truncated before each test suite (or per-test via `beforeEach`)
+- No mocking of the DB layer, ever. No `jest.mock()` on repositories or services.
+
+**What a test must do:**
+1. **Arrange** — create all required data by calling the API (signup, create resources, etc.)
+2. **Act** — perform the operation under test
+3. **Assert** — check the HTTP response AND query the DB directly to verify state
+
+**Example — real data flow test:**
+```typescript
+it('render returns updated content after production is promoted to a new version', async () => {
+  // Arrange: real user, real team, real prompt
+  const { apiKey } = await signupAndGetKey(app);
+
+  const { body: prompt } = await request(app)
+    .post('/api/v1/prompts')
+    .set('Authorization', `Bearer ${apiKey}`)
+    .send({ name: 'greeting' })
+    .expect(201);
+
+  await request(app)
+    .post(`/api/v1/prompts/${prompt.id}/versions`)
+    .set('Authorization', `Bearer ${apiKey}`)
+    .send({ messages: [{ role: 'system', content: 'Hello {{ name }}' }] })
+    .expect(201);
+
+  await request(app)
+    .post(`/api/v1/prompts/${prompt.id}/versions`)
+    .set('Authorization', `Bearer ${apiKey}`)
+    .send({ messages: [{ role: 'system', content: 'Hi there, {{ name }}!' }] })
+    .expect(201);
+
+  await request(app)
+    .post(`/api/v1/prompts/${prompt.id}/aliases/production/promote`)
+    .set('Authorization', `Bearer ${apiKey}`)
+    .send({ version_number: 2 })
+    .expect(200);
+
+  // Act
+  const res = await request(app)
+    .post(`/api/v1/prompts/greeting/production/render`)
+    .set('Authorization', `Bearer ${apiKey}`)
+    .send({ variables: { name: 'Alice' } })
+    .expect(200);
+
+  // Assert — v2 content is live
+  expect(res.body.messages[0].content).toBe('Hi there, Alice!');
+});
+```
+
+**Rules:**
+- Tests live next to the file they test (`<domain>.test.ts`), not in a top-level `tests/` folder.
+- Each test is fully self-contained — it creates everything it needs. No shared fixtures that bleed between tests.
+- Test the chain, not the unit: "create prompt → commit version → promote → render returns new content" is one test, not four.
+- External HTTP calls (e.g. LiteLLM in Phase 2) are the only things that may be mocked — and only because they involve real network calls to paid APIs.
+
+---
+
+## API Reference (living doc) — non-negotiable rule
+
+**Document an endpoint here ONLY after it is built AND verified working via curl.**
+
+Never pre-document. Never document from the spec alone. The entry below is written the moment the curl command returns the expected response. If the response differs from the spec, fix the code first, then document what actually works.
+
+**Entry format:**
+
+```
+### METHOD /api/v1/path
+
+curl -X METHOD http://localhost:3000/api/v1/path \
+  -H "Authorization: Bearer <key>" \
+  -H "Content-Type: application/json" \
+  -d '<exact request body that was tested>'
+
+# Response (status NNN)
+{
+  <exact response body that was returned>
+}
+```
+
+<!-- Endpoints are added below this line as they are built and curl-verified -->

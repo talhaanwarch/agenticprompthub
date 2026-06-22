@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Phase 1 — Prompt Management: Build Flowchart</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e2e8f0;
+      min-height: 100vh;
+      padding: 32px 24px 64px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    .header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: #f8fafc;
+      letter-spacing: -0.02em;
+    }
+    .header .subtitle {
+      color: #94a3b8;
+      font-size: 0.875rem;
+      margin-top: 6px;
+    }
+    .meta-row {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 12px;
+      flex-wrap: wrap;
+    }
+    .meta-badge {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+    .meta-badge span { color: #e2e8f0; font-weight: 600; }
+
+    /* ── HMW Banner ── */
+    .hmw {
+      background: linear-gradient(135deg, #1e1b4b 0%, #172554 100%);
+      border: 1px solid #3730a3;
+      border-radius: 12px;
+      padding: 16px 24px;
+      margin-bottom: 40px;
+      max-width: 900px;
+      margin-left: auto;
+      margin-right: auto;
+      text-align: center;
+    }
+    .hmw .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #818cf8;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .hmw p {
+      font-size: 0.875rem;
+      color: #c7d2fe;
+      line-height: 1.6;
+      font-style: italic;
+    }
+
+    /* ── Two-column track layout ── */
+    .tracks {
+      display: grid;
+      grid-template-columns: 1fr 40px 1fr;
+      gap: 0;
+      max-width: 1100px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    .track-header {
+      text-align: center;
+      padding: 10px 16px;
+      border-radius: 8px 8px 0 0;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 0;
+    }
+    .track-header.backend {
+      background: #0c4a6e;
+      border: 1px solid #0369a1;
+      color: #7dd3fc;
+    }
+    .track-header.frontend {
+      background: #1a1a2e;
+      border: 1px solid #4c1d95;
+      color: #a78bfa;
+    }
+
+    .divider-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 52px;
+    }
+
+    /* ── Cards ── */
+    .card {
+      border-radius: 10px;
+      padding: 16px 18px;
+      position: relative;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    }
+
+    .card.backend {
+      background: #0f2744;
+      border: 1px solid #1d4ed8;
+    }
+    .card.frontend {
+      background: #1a0f2e;
+      border: 1px solid #6d28d9;
+    }
+    .card.frontend.locked {
+      opacity: 0.55;
+      filter: grayscale(0.3);
+    }
+
+    .card-num {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+    }
+    .backend .card-num { color: #38bdf8; }
+    .frontend .card-num { color: #a78bfa; }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin-bottom: 10px;
+      line-height: 1.3;
+    }
+
+    .card-section {
+      margin-bottom: 10px;
+    }
+    .card-section-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 4px;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .pill {
+      font-size: 0.7rem;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .pill.schema   { background: #0e3b5c; color: #7dd3fc; border: 1px solid #0369a1; }
+    .pill.api      { background: #1e3a5f; color: #93c5fd; border: 1px solid #1d4ed8; }
+    .pill.sdk      { background: #0f3460; color: #a5b4fc; border: 1px solid #3730a3; }
+    .pill.rbac     { background: #2d1b69; color: #c4b5fd; border: 1px solid #6d28d9; }
+    .pill.fe-screen{ background: #1e1a4e; color: #a5b4fc; border: 1px solid #4338ca; }
+    .pill.fe-ui    { background: #2d1b69; color: #ddd6fe; border: 1px solid #7c3aed; }
+
+    .done-when {
+      background: #0a1628;
+      border-left: 3px solid;
+      border-radius: 0 6px 6px 0;
+      padding: 8px 10px;
+      font-size: 0.72rem;
+      color: #94a3b8;
+      line-height: 1.5;
+      margin-top: 8px;
+    }
+    .backend .done-when { border-color: #0369a1; }
+    .frontend .done-when { border-color: #6d28d9; }
+    .done-when strong { color: #38bdf8; font-weight: 700; }
+    .frontend .done-when strong { color: #a78bfa; }
+
+    /* ── Connectors ── */
+    .connector {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 4px 0;
+    }
+    .connector-line {
+      width: 2px;
+      height: 20px;
+      background: #334155;
+    }
+    .connector-arrow {
+      width: 0;
+      height: 0;
+      border-left: 6px solid transparent;
+      border-right: 6px solid transparent;
+      border-top: 8px solid #334155;
+    }
+    .connector-line.backend-c  { background: #1d4ed8; }
+    .connector-arrow.backend-c { border-top-color: #1d4ed8; }
+    .connector-line.frontend-c { background: #6d28d9; }
+    .connector-arrow.frontend-c{ border-top-color: #6d28d9; }
+
+    /* ── Gate ── */
+    .gate-wrapper {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .gate-line {
+      flex: 1;
+      height: 2px;
+      background: linear-gradient(90deg, #1d4ed8, #f59e0b, #6d28d9);
+    }
+    .gate-badge {
+      background: #292209;
+      border: 2px solid #f59e0b;
+      border-radius: 20px;
+      padding: 6px 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #fbbf24;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .gate-badge .sub {
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: #92400e;
+      display: block;
+      margin-top: 2px;
+    }
+
+    /* ── DoD ── */
+    .dod {
+      max-width: 900px;
+      margin: 48px auto 0;
+      background: #0d1f0d;
+      border: 1px solid #166534;
+      border-radius: 12px;
+      padding: 20px 24px;
+    }
+    .dod .label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #4ade80;
+      margin-bottom: 8px;
+    }
+    .dod p {
+      font-size: 0.875rem;
+      color: #bbf7d0;
+      line-height: 1.7;
+    }
+    .dod strong { color: #4ade80; }
+
+    /* ── Deferred table ── */
+    .deferred-section {
+      max-width: 900px;
+      margin: 32px auto 0;
+    }
+    .deferred-section h3 {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #64748b;
+      margin-bottom: 12px;
+    }
+    .deferred-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .deferred-pill {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 0.7rem;
+      color: #64748b;
+      text-decoration: line-through;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header">
+    <h1>Phase 1 — Prompt Management</h1>
+    <div class="subtitle">Build Decomposition Flowchart</div>
+    <div class="meta-row">
+      <div class="meta-badge">Status: <span>Approved</span></div>
+      <div class="meta-badge">Builder: <span>Solo + AI-paired</span></div>
+      <div class="meta-badge">Cadence: <span>1–2 days per part</span></div>
+      <div class="meta-badge">Total: <span>~2–3 weeks</span></div>
+      <div class="meta-badge">Parts: <span>11 (6 backend + 5 frontend)</span></div>
+    </div>
+  </div>
+
+  <!-- HMW -->
+  <div class="hmw">
+    <div class="label">How Might We</div>
+    <p>A solo developer builds Phase 1 as backend-first, 1–2 day chunked parts — each part produces a tested, documented API — so the frontend is built once against a stable, complete contract.</p>
+  </div>
+
+  <!-- Tracks -->
+  <div class="tracks">
+
+    <!-- ═══════════════ BACKEND TRACK ═══════════════ -->
+    <div>
+      <div class="track-header backend">Backend Track &nbsp;·&nbsp; Parts 1–6</div>
+
+      <!-- B1 -->
+      <div class="card backend" style="margin-top:0; border-top-left-radius:0;">
+        <div class="card-num">Backend Part 1</div>
+        <div class="card-title">Schema + Auth API</div>
+        <div class="card-section">
+          <div class="card-section-label">Schema</div>
+          <div class="pill-list">
+            <span class="pill schema">users</span>
+            <span class="pill schema">teams</span>
+            <span class="pill schema">team_members</span>
+            <span class="pill schema">api_keys</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Endpoints</div>
+          <div class="pill-list">
+            <span class="pill api">POST /auth/signup</span>
+            <span class="pill api">POST /auth/login</span>
+            <span class="pill api">POST /auth/logout</span>
+            <span class="pill api">GET /auth/me</span>
+            <span class="pill api">POST /api-keys</span>
+            <span class="pill api">DELETE /api-keys/:id</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Done when:</strong> Signup, login, logout, and <code>/me</code> all work via curl/Postman. A personal API key can be generated and revoked.</div>
+      </div>
+
+      <div class="connector"><div class="connector-line backend-c"></div><div class="connector-arrow backend-c"></div></div>
+
+      <!-- B2 -->
+      <div class="card backend">
+        <div class="card-num">Backend Part 2</div>
+        <div class="card-title">Prompt CRUD + Versioning API</div>
+        <div class="card-section">
+          <div class="card-section-label">Schema</div>
+          <div class="pill-list">
+            <span class="pill schema">prompts</span>
+            <span class="pill schema">prompt_versions (JSONB)</span>
+            <span class="pill schema">prompt_aliases</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Endpoints</div>
+          <div class="pill-list">
+            <span class="pill api">POST /prompts</span>
+            <span class="pill api">GET /prompts</span>
+            <span class="pill api">PATCH /prompts/:id</span>
+            <span class="pill api">DELETE /prompts/:id</span>
+            <span class="pill api">POST /prompts/:id/versions</span>
+            <span class="pill api">GET /prompts/:id/versions</span>
+            <span class="pill api">POST /prompts/:name/:alias/render</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Done when:</strong> A Jinja2 prompt can be committed, promoted to <code>production</code>, and rendered — returning a correct OpenAI-compatible messages array.</div>
+      </div>
+
+      <div class="connector"><div class="connector-line backend-c"></div><div class="connector-arrow backend-c"></div></div>
+
+      <!-- B3 -->
+      <div class="card backend">
+        <div class="card-num">Backend Part 3</div>
+        <div class="card-title">Versioning + Env Aliases API</div>
+        <div class="card-section">
+          <div class="card-section-label">Endpoints</div>
+          <div class="pill-list">
+            <span class="pill api">GET /prompts/:id/versions/:v</span>
+            <span class="pill api">GET /prompts/:id/aliases</span>
+            <span class="pill api">POST /prompts/:id/aliases/:alias/promote</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Auto-created aliases</div>
+          <div class="pill-list">
+            <span class="pill schema">production</span>
+            <span class="pill schema">staging</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Done when:</strong> A prompt can be saved (version created), promoted to <code>production</code>, and rolled back to a prior version — all via API.</div>
+      </div>
+
+      <div class="connector"><div class="connector-line backend-c"></div><div class="connector-arrow backend-c"></div></div>
+
+      <!-- B4 -->
+      <div class="card backend">
+        <div class="card-num">Backend Part 4</div>
+        <div class="card-title">SDK (TypeScript)</div>
+        <div class="card-section">
+          <div class="card-section-label">Package</div>
+          <div class="pill-list">
+            <span class="pill sdk">@agenticprompthub/sdk</span>
+            <span class="pill sdk">Node.js only</span>
+            <span class="pill sdk">lru-cache</span>
+            <span class="pill sdk">stale-while-revalidate</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">API surface</div>
+          <div class="pill-list">
+            <span class="pill api">new AgenticHub(config)</span>
+            <span class="pill api">renderPrompt(name, alias, vars)</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Config options</div>
+          <div class="pill-list">
+            <span class="pill schema">apiKey / baseUrl</span>
+            <span class="pill schema">cacheTtl (60s)</span>
+            <span class="pill schema">maxCacheSize (500)</span>
+            <span class="pill schema">maxRetries (1)</span>
+            <span class="pill schema">retryInterval (500ms)</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Done when:</strong> A Node.js script calls <code>renderPrompt("my-prompt", "production", { name: "Alice" })</code> and receives a correct OpenAI-compatible messages array.</div>
+      </div>
+
+      <div class="connector"><div class="connector-line backend-c"></div><div class="connector-arrow backend-c"></div></div>
+
+      <!-- B5 -->
+      <div class="card backend">
+        <div class="card-num">Backend Part 5</div>
+        <div class="card-title">Diff + Audit Trail + Export/Import</div>
+        <div class="card-section">
+          <div class="card-section-label">Endpoints</div>
+          <div class="pill-list">
+            <span class="pill api">GET /prompts/:id/versions/diff?from=v1&amp;to=v2</span>
+            <span class="pill api">GET /prompts/:id/audit</span>
+            <span class="pill api">GET /prompts/:id/versions/:v/export</span>
+            <span class="pill api">POST /prompts/import</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Audit events captured</div>
+          <div class="pill-list">
+            <span class="pill schema">version committed</span>
+            <span class="pill schema">alias promoted</span>
+            <span class="pill schema">alias rolled back</span>
+            <span class="pill schema">prompt created/deleted/renamed</span>
+            <span class="pill schema">API key generated/revoked</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Done when:</strong> Diff returns a unified diff string. Audit log shows full history. A prompt exported as JSON can be re-imported as a new prompt.</div>
+      </div>
+
+      <div class="connector"><div class="connector-line backend-c"></div><div class="connector-arrow backend-c"></div></div>
+
+      <!-- B6 -->
+      <div class="card backend">
+        <div class="card-num">Backend Part 6</div>
+        <div class="card-title">Teams + RBAC API</div>
+        <div class="card-section">
+          <div class="card-section-label">Schema</div>
+          <div class="pill-list">
+            <span class="pill schema">team_invites</span>
+            <span class="pill schema">team_member_roles</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Roles</div>
+          <div class="pill-list">
+            <span class="pill rbac">owner</span>
+            <span class="pill rbac">admin</span>
+            <span class="pill rbac">editor</span>
+            <span class="pill rbac">viewer</span>
+          </div>
+        </div>
+        <div class="card-section">
+          <div class="card-section-label">Endpoints</div>
+          <div class="pill-list">
+            <span class="pill api">POST /teams/:id/invites</span>
+            <span class="pill api">POST /teams/invites/:token/accept</span>
+            <span class="pill api">GET /teams/:id/members</span>
+            <span class="pill api">PATCH /teams/:id/members/:userId/roles</span>
+            <span class="pill api">DELETE /teams/:id/members/:userId</span>
+            <span class="pill api">POST /teams/:id/api-keys</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Done when:</strong> Owner vs. Viewer demo — Viewer cannot commit versions or promote aliases. Invite link generates, is accepted, new member appears with correct roles.</div>
+      </div>
+    </div>
+
+    <!-- ═══════════════ DIVIDER ═══════════════ -->
+    <div class="divider-col">
+      <svg width="40" height="100%" style="overflow:visible">
+        <line x1="20" y1="0" x2="20" y2="9999" stroke="#1e293b" stroke-width="2" stroke-dasharray="6 4"/>
+      </svg>
+    </div>
+
+    <!-- ═══════════════ FRONTEND TRACK ═══════════════ -->
+    <div>
+      <div class="track-header frontend">Frontend Track &nbsp;·&nbsp; Parts 7–11</div>
+
+      <!-- F1 -->
+      <div class="card frontend locked" style="margin-top:0; border-top-left-radius:0;">
+        <div class="card-num">Frontend Part 7</div>
+        <div class="card-title">Auth Screens</div>
+        <div class="card-section">
+          <div class="card-section-label">Screens</div>
+          <div class="pill-list">
+            <span class="pill fe-screen">Sign up</span>
+            <span class="pill fe-screen">Login</span>
+            <span class="pill fe-screen">My account</span>
+            <span class="pill fe-screen">API key management</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Depends on:</strong> Backend Part 1</div>
+      </div>
+
+      <div class="connector"><div class="connector-line frontend-c"></div><div class="connector-arrow frontend-c"></div></div>
+
+      <!-- F2 -->
+      <div class="card frontend locked">
+        <div class="card-num">Frontend Part 8</div>
+        <div class="card-title">Prompt CRUD Screens</div>
+        <div class="card-section">
+          <div class="card-section-label">Screens / components</div>
+          <div class="pill-list">
+            <span class="pill fe-screen">Prompt list (search/filter)</span>
+            <span class="pill fe-screen">Create prompt modal</span>
+            <span class="pill fe-screen">Prompt detail page</span>
+            <span class="pill fe-screen">Rich textarea + {{var}} highlight</span>
+            <span class="pill fe-screen">Variable preview panel</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Depends on:</strong> Backend Parts 2–3</div>
+      </div>
+
+      <div class="connector"><div class="connector-line frontend-c"></div><div class="connector-arrow frontend-c"></div></div>
+
+      <!-- F3 -->
+      <div class="card frontend locked">
+        <div class="card-num">Frontend Part 9</div>
+        <div class="card-title">Versioning + Aliases UI</div>
+        <div class="card-section">
+          <div class="card-section-label">Components</div>
+          <div class="pill-list">
+            <span class="pill fe-ui">Version history list</span>
+            <span class="pill fe-ui">Save as new version</span>
+            <span class="pill fe-ui">Alias status badges</span>
+            <span class="pill fe-ui">Promote to production/staging</span>
+            <span class="pill fe-ui">Rollback to prior version</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Depends on:</strong> Backend Parts 2–3</div>
+      </div>
+
+      <div class="connector"><div class="connector-line frontend-c"></div><div class="connector-arrow frontend-c"></div></div>
+
+      <!-- F4 -->
+      <div class="card frontend locked">
+        <div class="card-num">Frontend Part 10</div>
+        <div class="card-title">Team Management UI</div>
+        <div class="card-section">
+          <div class="card-section-label">Components</div>
+          <div class="pill-list">
+            <span class="pill fe-ui">Team settings page</span>
+            <span class="pill fe-ui">Member list + roles</span>
+            <span class="pill fe-ui">Invite by email</span>
+            <span class="pill fe-ui">Change role / remove member</span>
+            <span class="pill fe-ui">Team API key management</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Depends on:</strong> Backend Part 6</div>
+      </div>
+
+      <div class="connector"><div class="connector-line frontend-c"></div><div class="connector-arrow frontend-c"></div></div>
+
+      <!-- F5 -->
+      <div class="card frontend locked">
+        <div class="card-num">Frontend Part 11</div>
+        <div class="card-title">Diff + Audit UI</div>
+        <div class="card-section">
+          <div class="card-section-label">Components</div>
+          <div class="pill-list">
+            <span class="pill fe-ui">Version diff view (inline/side-by-side)</span>
+            <span class="pill fe-ui">Audit trail log (paginated)</span>
+            <span class="pill fe-ui">Export button (JSON / plain text)</span>
+          </div>
+        </div>
+        <div class="done-when"><strong>Depends on:</strong> Backend Part 5</div>
+      </div>
+    </div>
+
+  </div><!-- /tracks -->
+
+  <!-- Gate banner -->
+  <div style="max-width:1100px; margin: 24px auto 0;">
+    <div class="gate-wrapper">
+      <div class="gate-line"></div>
+      <div class="gate-badge">
+        GATE — Frontend starts only after all Backend Parts (1–6) are shipped &amp; tested
+        <span class="sub">API contract must be stable before any UI is built</span>
+      </div>
+      <div class="gate-line"></div>
+    </div>
+  </div>
+
+  <!-- Definition of Done -->
+  <div class="dod">
+    <div class="label">Definition of Done — Phase 1 Complete</div>
+    <p>
+      A developer fetches a <strong>production</strong> alias prompt at runtime via the SDK,
+      edits the content in the UI, promotes the new version to <strong>production</strong>,
+      and the next SDK fetch returns the updated content —
+      <strong>without touching or deploying application code</strong>.
+    </p>
+  </div>
+
+  <!-- Deferred -->
+  <div class="deferred-section">
+    <h3>Explicitly Deferred from Phase 1</h3>
+    <div class="deferred-grid">
+      <span class="deferred-pill">Multi-member teams (until B6)</span>
+      <span class="deferred-pill">LLM calls / playground (Phase 2)</span>
+      <span class="deferred-pill">Org layer</span>
+      <span class="deferred-pill">OAuth / SSO</span>
+      <span class="deferred-pill">Redis caching in SDK</span>
+      <span class="deferred-pill">Import from PromptLayer / Langfuse</span>
+      <span class="deferred-pill">Complex Jinja template logic</span>
+      <span class="deferred-pill">Webhooks</span>
+      <span class="deferred-pill">More than 2 env aliases</span>
+      <span class="deferred-pill">Fetch by version number in SDK</span>
+      <span class="deferred-pill">Per-prompt ACLs</span>
+      <span class="deferred-pill">reviewer role</span>
+    </div>
+  </div>
+
+</body>
+</html>
