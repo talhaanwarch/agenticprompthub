@@ -9,6 +9,9 @@
 # Local tooling
 .memsearch/
 
+# Test / curl artifacts
+cookies.txt
+
 # Node / build
 node_modules/
 dist/
