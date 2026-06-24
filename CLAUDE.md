@@ -43,11 +43,25 @@ Each entry must capture the **question** and the **why** (rationale), not just t
 
 If a decision is reversed or refined, **update the existing FAQ entry** rather than appending a conflicting one.
 
+## Open questions — non-negotiable rule
+
+Sometimes the user raises a design tension but explicitly asks to **defer it and
+reconsider at the end of the phase** rather than decide now. The moment such a
+question is parked, **append it to `docs/superpowers/specs/open_questions.md`
+immediately** — do not rely on remembering it later.
+
+- This file is distinct from the FAQ: the FAQ records decisions that **are
+  made** (question + why); `open_questions.md` records decisions **deliberately
+  postponed** (question + current behaviour + what to decide at phase end).
+- When an open question is resolved, move it into the relevant `phase-N-faq.md`
+  as a normal decision-with-rationale and strike the `open_questions.md` entry
+  with a pointer to the FAQ — preserve the history, don't silently delete it.
+
 ## Foundational decisions (see the roadmap for rationale)
 
 - **Tenancy:** everything is `team`-scoped; shared schema + Postgres Row-Level
   Security. Organization is an additive parent to be introduced later.
-- **Database:** PostgreSQL (JSONB for flexible payloads). **ORM: Drizzle** with the `postgres` npm driver.
+- **Database:** PostgreSQL (JSONB for flexible payloads). **ORM: Prisma** with the official Prisma Client.
 - **Frontend:** React. **Backend:** Express / TypeScript. **No Python in Phase 1** — nunjucks handles Jinja2 templating in Node.js. Python sidecars are anticipated for Phase 2 (LiteLLM gateway), Phase 5 (eval/scoring libraries), and Phase 6 (agent orchestration); they live in `services/` when they arrive and are called over HTTP from the core API.
 
 ---
@@ -62,7 +76,7 @@ If a decision is reversed or refined, **update the existing FAQ entry** rather t
 
 ### Repository layout (monorepo)
 
-This is a **pnpm workspaces monorepo** with Turborepo for task orchestration. The top-level structure maps directly to the 6-phase platform roadmap.
+This is an **npm workspaces monorepo** with Turborepo for task orchestration. The top-level structure maps directly to the 6-phase platform roadmap.
 
 ```
 agenticprompthub/                        ← monorepo root
@@ -132,9 +146,7 @@ apps/api/
 │   │
 │   └── shared/
 │       ├── db/
-│       │   ├── client.ts        ← single Drizzle db instance
-│       │   ├── schema.ts        ← all table definitions (single source of truth)
-│       │   └── migrations/      ← drizzle-kit generated SQL
+│       │   └── client.ts        ← single PrismaClient instance
 │       ├── middleware/
 │       │   ├── error.middleware.ts
 │       │   └── validate.middleware.ts
@@ -142,9 +154,11 @@ apps/api/
 │           ├── app-error.ts
 │           └── http-errors.ts
 │
+├── prisma/
+│   ├── schema.prisma            ← all model definitions (single source of truth)
+│   └── migrations/              ← Prisma-generated SQL migrations
 ├── app.ts                       ← Express factory — mounts all routers, no listen()
-├── server.ts                    ← Entry point — imports app.ts, calls listen()
-└── drizzle.config.ts
+└── server.ts                    ← Entry point — imports app.ts, calls listen()
 ```
 
 **Domain file pattern** — every domain folder follows the same internal structure:
@@ -205,15 +219,15 @@ Every exported function, class, method, and type **must** have a JSDoc block wit
 - Services throw typed errors; controllers catch them and map to HTTP status codes.
 - Never swallow errors silently. Always either re-throw or log and re-throw.
 
-### Drizzle ORM
+### Prisma ORM
 
-- The single Drizzle `db` instance is created once in `src/shared/db/client.ts` and imported everywhere — never create a new connection inside a service or repository.
-- All table definitions live in `src/shared/db/schema.ts`. This is the single source of truth for column names, types, and constraints. Do not duplicate column definitions anywhere else.
-- All database access goes through **repository classes** (`<domain>.repository.ts`). Services must never import `db` directly — only repositories do.
-- Migrations are managed by **drizzle-kit**: `drizzle-kit generate` to produce SQL, `drizzle-kit migrate` to apply. Never edit generated migration files by hand; create a new migration instead.
-- Use Drizzle's inferred types (`InferSelectModel<typeof prompts>`, etc.) as the source of truth for entity shapes in `*.types.ts` files.
-- For complex queries or operations not expressible in the Drizzle query builder, use `db.execute(sql`...`)` with the tagged `sql` template literal — do not stringify SQL manually.
-- For Row-Level Security (RLS, deferred to post-Phase 1), the pattern will be: set `app.current_team_id` via `db.execute(sql`SET LOCAL app.current_team_id = ${teamId}`)` inside a transaction before the query. Plan the connection pool accordingly when RLS arrives.
+- The single `PrismaClient` instance is created once in `src/shared/db/client.ts` and imported everywhere — never instantiate `PrismaClient` inside a service or repository.
+- All model definitions live in `prisma/schema.prisma`. This is the single source of truth for table names, field types, and constraints. Do not duplicate model definitions anywhere else.
+- All database access goes through **repository classes** (`<domain>.repository.ts`). Services must never import `prisma` directly — only repositories do.
+- Migrations are managed by **Prisma Migrate**: `npx prisma migrate dev --name <description>` to create and apply in development; `npx prisma migrate deploy` in production. Never edit generated migration files by hand; create a new migration instead.
+- Use Prisma's generated types (`Prisma.PromptGetPayload<...>`, `Prisma.PromptCreateInput`, etc.) as the source of truth for entity shapes in `*.types.ts` files.
+- For complex queries not expressible via the Prisma query builder, use `prisma.$queryRaw` or `prisma.$executeRaw` with the tagged `Prisma.sql` template literal — do not stringify SQL manually.
+- For Row-Level Security (RLS, deferred to post-Phase 1), the pattern will be: execute `SET LOCAL app.current_team_id = '${teamId}'` inside a `prisma.$transaction` before the query. Plan the connection pool accordingly when RLS arrives.
 
 ### Express (API framework)
 
@@ -313,3 +327,88 @@ curl -X METHOD http://localhost:3000/api/v1/path \
 ```
 
 <!-- Endpoints are added below this line as they are built and curl-verified -->
+
+### POST /api/v1/auth/signup
+
+curl -c cookies.txt -X POST http://localhost:3000/api/v1/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"password123","displayName":"Dev Tester"}'
+
+# Response (status 201) — also sets a `connect.sid` HttpOnly session cookie
+{
+  "user": { "id": "0eaa4065-fcfa-40ae-8d7a-06b2554331b5", "email": "alice@example.com", "displayName": "Dev Tester" },
+  "team": { "id": "40dbd116-e2c1-482c-b07e-14abca710162", "name": "alice@example.com's team" }
+}
+
+### GET /api/v1/auth/me
+
+curl -b cookies.txt http://localhost:3000/api/v1/auth/me
+
+# Response (status 200)
+{
+  "user": { "id": "0eaa4065-fcfa-40ae-8d7a-06b2554331b5", "email": "alice@example.com", "displayName": "Dev Tester" },
+  "team": { "id": "40dbd116-e2c1-482c-b07e-14abca710162", "name": "alice@example.com's team" },
+  "roles": ["owner"]
+}
+
+### POST /api/v1/api-keys
+
+# Accepts EITHER a session cookie OR a Bearer key. Full `key` is returned only here.
+curl -b cookies.txt -X POST http://localhost:3000/api/v1/api-keys \
+  -H "Content-Type: application/json" \
+  -d '{"name":"my-dev-key"}'
+
+# Response (status 201)
+{
+  "id": "21ef4fd3-e386-4026-8470-2cbe7c650e06",
+  "key": "58012951ebbf22406876ae7dd44618143edded27786239f682eae7dcabbf924a",
+  "name": "my-dev-key",
+  "createdAt": "2026-06-23T15:30:37.806Z"
+}
+
+### GET /api/v1/api-keys
+
+# Session cookie OR Bearer key — both verified to return 200. Full key never returned (only lastFour).
+curl -b cookies.txt http://localhost:3000/api/v1/api-keys
+# or: curl -H "Authorization: Bearer <key>" http://localhost:3000/api/v1/api-keys
+
+# Response (status 200)
+[
+  { "id": "21ef4fd3-e386-4026-8470-2cbe7c650e06", "name": "my-dev-key", "lastFour": "924a", "createdAt": "2026-06-23T15:30:37.806Z" }
+]
+
+### POST /api/v1/auth/login
+
+curl -c cookies.txt -X POST http://localhost:3000/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email":"alice@example.com","password":"password123"}'
+
+# Response (status 200) — sets a `connect.sid` session cookie. Same shape as signup.
+{
+  "user": { "id": "2774d97d-312a-467c-a370-fc5a6e490382", "email": "alice@example.com", "displayName": null },
+  "team": { "id": "ca68151a-1ec4-43b9-b523-6472357181b2", "name": "alice@example.com's team" }
+}
+
+# Wrong email or password (status 401) — same message for both, no user enumeration:
+# { "error": { "code": "UNAUTHORIZED", "message": "Invalid email or password." } }
+
+### POST /api/v1/auth/logout
+
+# Requires an active session cookie. Destroys the session server-side.
+curl -b cookies.txt -X POST http://localhost:3000/api/v1/auth/logout
+
+# Response (status 204) — no body. The session is now dead: a subsequent
+# GET /auth/me with the same cookie returns 401 UNAUTHORIZED.
+# Logout with no active session also returns 401 UNAUTHORIZED.
+
+### DELETE /api/v1/api-keys/:id
+
+# Soft-revokes the key (sets revoked_at); it immediately stops authenticating.
+# Session cookie OR Bearer key. You can only revoke keys in your own team.
+curl -b cookies.txt -X DELETE \
+  http://localhost:3000/api/v1/api-keys/9d4a12f2-8a6a-4a5c-a1d5-708676196c1e
+
+# Response (status 204) — no body. The id disappears from GET /api/v1/api-keys.
+
+# Unknown id (or a key in another team) returns 404:
+# { "error": { "code": "NOT_FOUND", "message": "API key not found." } }

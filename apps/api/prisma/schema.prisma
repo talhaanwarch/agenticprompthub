@@ -1,0 +1,104 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Core identity record — one row per registered user.
+/// `display_name` is nullable and used only in audit logs and member lists;
+/// email is the sole login credential and unique identifier.
+model User {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email           String       @unique(map: "users_email_unique")
+  passwordHash    String       @map("password_hash")
+  displayName     String?      @map("display_name")
+  createdAt       DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  apiKeys         ApiKey[]
+  teamMemberships TeamMember[]
+
+  @@index([email], map: "idx_users_email")
+  @@map("users")
+}
+
+/// Tenancy unit. Every row is a team — no "type" field.
+/// The org layer (if added later) will be an additive parent table, not a type here.
+model Team {
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name      String
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  apiKeys   ApiKey[]
+  members   TeamMember[]
+
+  @@map("teams")
+}
+
+/// Many-to-many join between users and teams.
+/// One row per (user, team) pair. A user's roles for that team are in TeamMemberRole.
+model TeamMember {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  teamId    String           @map("team_id") @db.Uuid
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  roles     TeamMemberRole[]
+  team      Team             @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "team_members_team_id_teams_id_fk")
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "team_members_user_id_users_id_fk")
+
+  @@unique([userId, teamId], map: "uq_team_members_user_team")
+  @@index([teamId], map: "idx_team_members_team_id")
+  @@index([userId], map: "idx_team_members_user_id")
+  @@map("team_members")
+}
+
+/// Roles held by a team member. One row per role — a member can hold multiple.
+/// Allows adding a new role (e.g. "reviewer") via INSERT, not schema migration.
+model TeamMemberRole {
+  id           String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teamMemberId String     @map("team_member_id") @db.Uuid
+  role         team_role
+  teamMember   TeamMember @relation(fields: [teamMemberId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "team_member_roles_team_member_id_team_members_id_fk")
+
+  @@unique([teamMemberId, role], map: "uq_team_member_roles_member_role")
+  @@index([teamMemberId], map: "idx_team_member_roles_member_id")
+  @@map("team_member_roles")
+}
+
+/// Personal and team-scoped API keys.
+/// `key` is stored plain text in Phase 1 (no external users yet).
+/// `revoked_at` being non-null means the key is inactive.
+/// The only time the full `key` value is returned to the caller is at creation (201 response).
+model ApiKey {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  teamId    String    @map("team_id") @db.Uuid
+  key       String    @unique(map: "api_keys_key_unique")
+  name      String?
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz(6)
+  team      Team      @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "api_keys_team_id_teams_id_fk")
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "api_keys_user_id_users_id_fk")
+
+  @@index([userId, teamId], map: "idx_api_keys_user_team")
+  @@index([key], map: "idx_api_keys_key_active")
+  @@map("api_keys")
+}
+
+/// Session store table consumed by connect-pg-simple.
+/// Managed here so Prisma migrations create it alongside all other tables.
+model Session {
+  sid    String   @id @db.VarChar
+  sess   Json     @db.Json
+  expire DateTime @db.Timestamp(6)
+
+  @@index([expire], map: "IDX_session_expire")
+  @@map("session")
+}
+
+enum team_role {
+  owner
+  admin
+  editor
+  viewer
+}
